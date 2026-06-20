@@ -1,0 +1,112 @@
+@startuml modelo_estrela
+' Modelo Estrela (Star Schema) - Data Warehouse de Vendas AdventureWorks
+' Renderize em https://www.plantuml.com/plantuml ou com a extensão PlantUML.
+
+skinparam linetype ortho
+skinparam backgroundColor #FFFFFF
+hide circle
+
+' ====================== TABELA FATO ======================
+entity "fato_vendas" as fato #FFE6CC {
+  *sk_venda : INT <<PK>>
+  --
+  nk_pedido : INT
+  nk_detalhe : INT <<grão>>
+  --
+  sk_tempo : INT <<FK>>
+  sk_produto : INT <<FK>>
+  sk_cliente : INT <<FK>>
+  sk_vendedor : INT <<FK>>
+  sk_territorio : INT <<FK>>
+  sk_promocao : INT <<FK>>
+  --
+  quantidade : INT
+  preco_unitario : DECIMAL
+  desconto_unitario : DECIMAL
+  receita_bruta : DECIMAL
+  receita_liquida : DECIMAL
+  custo_total : DECIMAL
+  lucro_bruto : DECIMAL
+  margem_percentual : DECIMAL
+  frete_rateado : DECIMAL
+  imposto_rateado : DECIMAL
+}
+
+' ====================== DIMENSÕES ======================
+entity "dim_tempo" as dtempo #DAE8FC {
+  *sk_tempo : INT <<PK>>
+  --
+  data_completa : DATE
+  ano : INT
+  trimestre : INT
+  mes : INT
+  nome_mes : VARCHAR
+  semana_ano : INT
+  dia : INT
+  dia_semana : VARCHAR
+  eh_fim_semana : BOOLEAN
+}
+
+entity "dim_produto" as dprod #DAE8FC {
+  *sk_produto : INT <<PK>>
+  --
+  nk_produto : INT
+  nome_produto : VARCHAR
+  categoria : VARCHAR
+  subcategoria : VARCHAR
+  cor / tamanho / classe : VARCHAR
+  preco_lista : DECIMAL
+  custo_padrao : DECIMAL
+  registro_atual : BOOLEAN  <<SCD2>>
+}
+
+entity "dim_cliente" as dcli #DAE8FC {
+  *sk_cliente : INT <<PK>>
+  --
+  nk_cliente : INT
+  nome_completo : VARCHAR
+  tipo_cliente : VARCHAR
+  territorio / regiao / pais : VARCHAR
+  cidade / estado / cep : VARCHAR
+  registro_atual : BOOLEAN  <<SCD2>>
+}
+
+entity "dim_vendedor" as dvend #DAE8FC {
+  *sk_vendedor : INT <<PK>>
+  --
+  nk_vendedor : INT
+  nome_completo : VARCHAR
+  cargo : VARCHAR
+  territorio / regiao / pais : VARCHAR
+  cota_anual : DECIMAL
+  comissao_pct : DECIMAL
+  registro_atual : BOOLEAN  <<SCD2>>
+}
+
+entity "dim_territorio" as dterr #DAE8FC {
+  *sk_territorio : INT <<PK>>
+  --
+  nk_territorio : INT
+  nome_territorio : VARCHAR
+  pais : VARCHAR
+  grupo : VARCHAR
+}
+
+entity "dim_promocao" as dprom #DAE8FC {
+  *sk_promocao : INT <<PK>>
+  --
+  nk_promocao : INT
+  descricao : VARCHAR
+  tipo_desconto : VARCHAR
+  percentual_desconto : DECIMAL
+}
+
+' ====================== RELACIONAMENTOS ======================
+dtempo ||--o{ fato
+dprod  ||--o{ fato
+dcli   ||--o{ fato
+dvend  ||--o{ fato
+dterr  ||--o{ fato
+dprom  ||--o{ fato
+
+@enduml
