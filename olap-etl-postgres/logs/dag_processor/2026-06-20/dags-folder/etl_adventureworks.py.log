@@ -211,3 +211,6 @@
 {"timestamp":"2026-06-20T20:32:27.185700Z","level":"info","event":"Filling up the DagBag from /opt/airflow/dags/etl_adventureworks.py","logger":"airflow.models.dagbag.BundleDagBag","filename":"dagbag.py","lineno":593}
 {"timestamp":"2026-06-20T20:32:58.715186Z","level":"info","event":"Filling up the DagBag from /opt/airflow/dags/etl_adventureworks.py","logger":"airflow.models.dagbag.BundleDagBag","filename":"dagbag.py","lineno":593}
 {"timestamp":"2026-06-20T20:33:29.315527Z","level":"info","event":"Filling up the DagBag from /opt/airflow/dags/etl_adventureworks.py","logger":"airflow.models.dagbag.BundleDagBag","filename":"dagbag.py","lineno":593}
+{"timestamp":"2026-06-20T20:34:00.756644Z","level":"info","event":"Filling up the DagBag from /opt/airflow/dags/etl_adventureworks.py","logger":"airflow.models.dagbag.BundleDagBag","filename":"dagbag.py","lineno":593}
+{"timestamp":"2026-06-20T20:34:33.637309Z","level":"info","event":"Filling up the DagBag from /opt/airflow/dags/etl_adventureworks.py","logger":"airflow.models.dagbag.BundleDagBag","filename":"dagbag.py","lineno":593}
+{"timestamp":"2026-06-20T20:35:07.300096Z","level":"info","event":"Filling up the DagBag from /opt/airflow/dags/etl_adventureworks.py","logger":"airflow.models.dagbag.BundleDagBag","filename":"dagbag.py","lineno":593}
