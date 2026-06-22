@@ -1,0 +1,121 @@
+# ============================================================================
+# PIPELINE DE ETL AUTOMATIZADO - APACHE AIRFLOW 3.1.8
+# ARQUIVO: dags/etl_adventureworks_dw.py
+# AUTOR: HENRIQUE BRUNELI SANTOS
+# ============================================================================
+
+from airflow import DAG
+from airflow.providers.postgres.operators.postgres import PostgresOperator
+from datetime import datetime, timedelta
+
+# Configurações básicas de comportamento da DAG
+default_args = {
+    'owner': 'henrique_bruneli',
+    'depends_on_past': False,
+    'start_date': datetime(2026, 1, 1),
+    'email_on_failure': False,
+    'email_on_retry': False,
+    'retries': 2,                  # Se falhar, tenta de novo 2 vezes
+    'retry_delay': timedelta(minutes=5), # Espera 5 minutos entre as tentativas
+}
+
+# Definição do escopo da DAG
+with DAG(
+    'etl_adventureworks_dw',
+    default_args=default_args,
+    description='Pipeline de carga incremental OLTP para Data Warehouse via postgres_fdw',
+    schedule_interval='@daily',    # Executa automaticamente TODO DIA
+    catchup=False,
+    tags=['adventureworks', 'dw', 'vendas'],
+) as dag:
+
+    # ------------------------------------------------------------------------
+    # DEFINIÇÃO DAS TAREFAS (TASKS)
+    # Cada bloco abaixo é uma caixinha que executará comandos dentro do Postgres
+    # ------------------------------------------------------------------------
+
+    # Tarefa 1: Prepara as estruturas internas do DW se necessário
+    setup_dw = PostgresOperator(
+        task_id='setup_dw',
+        postgres_conn_id='postgres_dw_conn',
+        sql="SELECT 1;" # Aqui rodaria um script de checagem inicial
+    )
+
+    # Tarefa 2: Configura a conexão externa FDW com o banco de produção (OLTP)
+    setup_fdw = PostgresOperator(
+        task_id='setup_fdw',
+        postgres_conn_id='postgres_dw_conn',
+        sql="SELECT 1;" 
+    )
+
+    # Tarefas 3 a 8: Atualização das tabelas de dimensões
+    dim_tempo_task = PostgresOperator(
+        task_id='dim_tempo',
+        postgres_conn_id='postgres_dw_conn',
+        sql="-- Código SQL de população cronológica"
+    )
+
+    dim_produto_task = PostgresOperator(
+        task_id='dim_produto',
+        postgres_conn_id='postgres_dw_conn',
+        sql="-- Atualização incremental de produtos (SCD Tipo 2)"
+    )
+
+    dim_cliente_task = PostgresOperator(
+        task_id='dim_cliente',
+        postgres_conn_id='postgres_dw_conn',
+        sql="-- Atualização incremental de clientes (SCD Tipo 2)"
+    )
+
+    dim_promocao_task = PostgresOperator(
+        task_id='dim_promocao',
+        postgres_conn_id='postgres_dw_conn',
+        sql="-- Atualização incremental de promoções (SCD Tipo 1)"
+    )
+
+    dim_territorio_task = PostgresOperator(
+        task_id='dim_territorio',
+        postgres_conn_id='postgres_dw_conn',
+        sql="-- Atualização incremental de territórios (SCD Tipo 1)"
+    )
+
+    dim_vendedor_task = PostgresOperator(
+        task_id='dim_vendedor',
+        postgres_conn_id='postgres_dw_conn',
+        sql="-- Atualização incremental de vendedores (SCD Tipo 2)"
+    )
+
+    # Tarefa 9: Junta tudo, calcula as regras de faturamento e popula a fato
+    fato_vendas_task = PostgresOperator(
+        task_id='fato_vendas',
+        postgres_conn_id='postgres_dw_conn',
+        sql="-- Consolidação das regras de faturamento e carga delta incremental"
+    )
+
+    # ------------------------------------------------------------------------
+    # ORQUESTRAÇÃO / DEPENDÊNCIAS (O MAPA DO FLUXO)
+    # Os operadores '>>' definem a ordem exata de execução das tarefas
+    # ------------------------------------------------------------------------
+    
+    # Primeiro faz o setup do DW, depois o setup do FDW
+    setup_dw >> setup_fdw
+    
+    # Assim que o FDW estiver pronto, dispara TODAS as 6 dimensões EM PARALELO
+    setup_fdw >> [
+        dim_tempo_task, 
+        dim_produto_task, 
+        dim_cliente_task, 
+        dim_promocao_task, 
+        dim_territorio_task, 
+        dim_vendedor_task
+    ]
+    
+    # A tabela fato ESPERA todas as dimensões terminarem com sucesso para rodar
+    [
+        dim_tempo_task, 
+        dim_produto_task, 
+        dim_cliente_task, 
+        dim_promocao_task, 
+        dim_territorio_task, 
+        dim_vendedor_task
+    ] >> fato_vendas_task
